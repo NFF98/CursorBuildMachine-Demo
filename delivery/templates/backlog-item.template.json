@@ -1,0 +1,20 @@
+{
+  "backlog_item_id": "BL-P1-001",
+  "source": "BUILD_SPEC",
+  "build_spec_id": "BS-P1-001",
+  "function_id": "F00",
+  "title": "",
+  "status": "QUEUED",
+  "priority": "P0",
+  "scope_contracts": [],
+  "acceptance_links": [
+    {
+      "acceptance_id": "F00-AC-001",
+      "test_id": "TEST-F00-001",
+      "test_family": "behavior"
+    }
+  ],
+  "dependencies": [],
+  "sprint_id": null,
+  "product_decision_allowed": false
+}
