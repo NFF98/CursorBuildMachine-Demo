@@ -1,0 +1,101 @@
+{
+  "schema_version": 4,
+  "design_source_repo": "OWNER/PRODUCT-DESIGN-REPO",
+  "forbidden_top_level_directories": [
+    "working",
+    "spec",
+    "execution"
+  ],
+  "immutable_after_merge": [
+    "build-spec/baselines"
+  ],
+  "implementation_roots": [
+    "src/",
+    "tests/",
+    "supabase/"
+  ],
+  "hold_exceptions": [
+    "src/README.md",
+    "tests/README.md",
+    "tests/contract/README.md",
+    "tests/behavior/README.md",
+    "tests/api/README.md",
+    "tests/runtime/README.md",
+    "tests/state-machine/README.md",
+    "tests/visual/README.md",
+    "tests/responsive/README.md",
+    "tests/accessibility/README.md",
+    "tests/regression/README.md"
+  ],
+  "governance_only_paths": [
+    "build-spec/",
+    "harness/",
+    "ci/",
+    "deploy/",
+    "releases/",
+    "skills/",
+    ".cursor/",
+    ".github/",
+    "AGENTS.md",
+    "delivery/backlog/",
+    "delivery/templates/",
+    "delivery/deltas/",
+    "tooling/",
+    "tsconfig.json",
+    "eslint.config.mjs",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ],
+  "cursor_product_implementation_requires": [
+    "active_locked_build_spec",
+    "active_approved_sprint",
+    "active_task"
+  ],
+  "finding_classifications": [
+    "IMPLEMENTATION_BUG",
+    "TEST_BUG",
+    "SPEC_AMBIGUITY",
+    "DESIGN_DELTA_CANDIDATE",
+    "BUILD_BLOCKER"
+  ],
+  "finding_statuses": [
+    "OPEN",
+    "ASSESSING",
+    "BLOCKED",
+    "RESOLVED",
+    "CLOSED"
+  ],
+  "delta_types": [
+    "DESIGN_DELTA",
+    "IMPLEMENTATION_DELTA",
+    "TEST_DELTA",
+    "DEBUG_FINDING",
+    "FIX_DELTA"
+  ],
+  "delta_statuses": [
+    "OPEN",
+    "ASSESSING",
+    "APPROVED",
+    "IMPLEMENTING",
+    "VERIFIED",
+    "CLOSED",
+    "REJECTED"
+  ],
+  "release_target_types": [
+    "CLOUDFLARE_PAGES",
+    "CLOUDFLARE_WORKER",
+    "SUPABASE_MIGRATIONS"
+  ],
+  "human_gate_required_for": [
+    "DESIGN_DELTA",
+    "BUILD_SPEC_FREEZE",
+    "BUILD_SPEC_REBASELINE",
+    "SPRINT_ACTIVATION",
+    "SPRINT_CLOSE",
+    "RELEASE_APPROVAL",
+    "PRODUCT_DECISION",
+    "MATERIAL_VISUAL_CHANGE",
+    "PUBLIC_DATA_SECURITY_RUNTIME_CONTRACT_CHANGE"
+  ],
+  "max_same_strategy_failures_before_escalation": 2
+}
