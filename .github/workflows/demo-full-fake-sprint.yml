@@ -4,7 +4,24 @@ on:
   pull_request:
     paths:
       - "demo/full-fake-sprint.mjs"
-      - ".github/workflows/fake-sprint-e2e.yml"
+      - ".github/workflows/demo-full-fake-sprint.yml"
+      - "harness/**"
+      - "build-spec/**"
+      - "delivery/**"
+      - "releases/**"
+      - "ci/**"
+      - "package.json"
+  push:
+    branches: [main]
+    paths:
+      - "demo/full-fake-sprint.mjs"
+      - ".github/workflows/demo-full-fake-sprint.yml"
+      - "harness/**"
+      - "build-spec/**"
+      - "delivery/**"
+      - "releases/**"
+      - "ci/**"
+      - "package.json"
   workflow_dispatch:
 
 permissions:
