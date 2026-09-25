@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "baseline_id": "BS-P1-001",
+  "previous_baseline": null,
+  "type": "INITIAL_FREEZE",
+  "status": "USER_APPROVED",
+  "decision_ref": "USER-DECISION-REF",
+  "approved_delta_ids": [],
+  "source_working_commit": "0000000000000000000000000000000000000000",
+  "activated_at": "2026-09-24T00:00:00Z"
+}

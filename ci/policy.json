@@ -1,0 +1,22 @@
+{
+  "schema_version": 3,
+  "lockfile_required_when_implementation_enabled": true,
+  "required_when_implementation_enabled": [
+    "check:types",
+    "check:lint",
+    "test:unit",
+    "test:contract",
+    "test:regression",
+    "security:audit",
+    "build"
+  ],
+  "required_before_release_on_staging": [
+    "test:e2e",
+    "test:a11y",
+    "test:responsive"
+  ],
+  "semi_automated_ui_gate": [
+    "test:visual"
+  ],
+  "release_requires_product_ci": true
+}

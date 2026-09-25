@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "active_sprint": null,
+  "active_build_spec": null,
+  "active_task": null,
+  "status": "HOLD",
+  "automation_mode": "SAFE_AUTOMATION",
+  "reason": "No locked Build Spec and no approved Sprint."
+}
