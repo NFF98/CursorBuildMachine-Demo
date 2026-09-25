@@ -1,0 +1,13 @@
+---
+description: Release and production safety rules
+alwaysApply: true
+---
+
+- Cursor does not create or approve Production Release decisions.
+- Never edit releases/, deploy/, ci/, GitHub workflows, or release policy merely to make a failing release pass.
+- A Release must bind to a locked Build Spec, closed Sprint(s), source commit, passing gate results, and User approval.
+- Release manifests may select only supported deployment target types; never add arbitrary shell commands.
+- Production database migrations are forward-only and must be backward-compatible / expand-only.
+- Never auto-generate a destructive DB rollback.
+- Production code rollback is allowed only through the governed rollback workflow.
+- A release failure is a Finding / Incident input; it does not change product truth.

@@ -1,0 +1,13 @@
+---
+description: Finding and Delta authority rules
+alwaysApply: true
+---
+
+- Build/Test failure creates a Finding first.
+- Cursor may create/update delivery/findings/ within the active Task lifecycle.
+- Cursor must not author, approve, close, or fabricate a DESIGN_DELTA decision.
+- delivery/deltas/ is HUMAN_GOVERNANCE controlled.
+- SPEC_AMBIGUITY, DESIGN_DELTA_CANDIDATE, or contract-affecting BUILD_BLOCKER requires affected Task BLOCKED.
+- An implementation or test bug may use the Fast Loop only when contract semantics do not change.
+- Same strategy may fail at most twice; third attempt is forbidden.
+- Product/design change path is Finding → Human governance → Product Working → User approval → new Build Spec → Activation → rebind.

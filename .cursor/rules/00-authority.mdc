@@ -1,0 +1,13 @@
+---
+description: NodeFF Build authority and no-product-invention rules
+alwaysApply: true
+---
+
+- This repository implements NodeFF; it does not define product truth.
+- Product Design Current Truth lives in OWNER/PRODUCT-DESIGN-REPO/working/.
+- During implementation, the ONLY product input is the active locked baseline referenced by build-spec/CURRENT.json.
+- Never use chat, code behavior, old commits, comments, or library constraints as product authority.
+- Never create or edit a shadow working/spec/execution tree in this repo.
+- If no active locked baseline or active Sprint exists, product implementation is HOLD.
+- Never modify an existing build-spec/baselines/BS-*/ directory.
+- If two reasonable product behaviors are possible and the locked contract does not choose one: STOP the affected task, record SPEC_AMBIGUITY, and do not guess.

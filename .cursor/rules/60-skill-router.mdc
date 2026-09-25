@@ -1,0 +1,17 @@
+---
+description: Required Agent Skill routing
+alwaysApply: true
+---
+
+- Before executing an active Task, read skills/REGISTRY.json.
+- Read every SKILL.md listed by the Task required_skills before modifying files.
+- A Skill describes method; it never grants write permission beyond Task allowed_write_paths.
+- Planning work uses task-planner.
+- Product implementation uses implementer.
+- Adding or changing mapped tests uses test-builder.
+- Reproducing/fixing a failure uses debugger.
+- Review requires reviewer.
+- UI/UX verification requires ui-verifier when the Task touches UI or visual Acceptance.
+- Database migration work requires db-migration.
+- Release execution follows release-agent and approved release workflows.
+- If a needed Skill is not registered, do not invent a new operating method inside the Task; stop and request governance update.

@@ -1,0 +1,13 @@
+---
+description: Sprint execution rules
+alwaysApply: true
+---
+
+- Read delivery/CURRENT-SPRINT.json before work.
+- Work only on tasks listed in the active Sprint manifest.
+- Every task must bind to the active Build Spec ID and mapped Acceptance/Test IDs.
+- Implement one task at a time unless explicitly marked parallel-safe.
+- A task closes only after mapped tests pass and evidence is recorded.
+- Do not silently expand scope.
+- New work discovered during implementation becomes a Finding.
+- The same implementation strategy may fail at most twice. After two failures, stop and record concrete evidence.

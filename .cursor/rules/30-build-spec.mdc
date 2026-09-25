@@ -1,0 +1,24 @@
+---
+description: Build Spec immutability and rebaseline rules
+alwaysApply: true
+---
+
+- build-spec/CURRENT.json names the only active baseline.
+- Baselines are immutable after merge to main.
+- Activation Records are append-only governance artifacts.
+- Never create, edit, approve, or forge build-spec/activations/*.json as Cursor.
+- Never edit an old baseline to make tests pass.
+- Never reinterpret a contract because implementation is difficult.
+- Never remove an Acceptance/Test obligation without an approved rebaseline.
+- Never switch build-spec/CURRENT.json directly.
+
+Approved rebaseline:
+1. affected Sprint is BLOCKED first when a Sprint exists;
+2. approved DESIGN_DELTA exists with explicit User decision reference;
+3. Product Working is changed and approved;
+4. old baseline remains unchanged;
+5. a new BS-* baseline is added with supersedes + approved delta IDs;
+6. Human governance adds matching Activation Record;
+7. CURRENT changes to the new baseline in the governed change;
+8. Backlog/tasks are explicitly rebound;
+9. all Harness gates pass before implementation resumes.
