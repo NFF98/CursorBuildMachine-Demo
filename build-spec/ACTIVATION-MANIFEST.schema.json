@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cursor Build Machine Spec Activation",
+  "type": "object",
+  "required": [
+    "schema_version","baseline_id","previous_baseline","type","status",
+    "decision_ref","approved_delta_ids","source_working_commit","activated_at"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "baseline_id": { "type": "string", "pattern": "^BS-P[0-9]+-[0-9]{3}$" },
+    "previous_baseline": { "type": ["string","null"] },
+    "type": { "enum": ["INITIAL_FREEZE","REBASELINE"] },
+    "status": { "const": "USER_APPROVED" },
+    "decision_ref": { "type": "string", "minLength": 1 },
+    "approved_delta_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^BD-[0-9]{3,}$" }
+    },
+    "source_working_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "activated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,50 @@
+name: Promote Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Approved release ID, e.g. REL-P1-001
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    outputs:
+      release_ref: ${{ steps.out.outputs.release_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Full repository gate
+        run: npm run gate
+      - name: Product CI
+        run: npm run product:ci
+      - name: Validate approved release candidate
+        run: node harness/scripts/validate-release.mjs --release "${{ inputs.release_id }}" --head "${{ github.sha }}"
+      - name: Create immutable release tag
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          git config user.name "NFF Release Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git tag -a "$RELEASE_ID" -m "Promote $RELEASE_ID"
+          git push origin "$RELEASE_ID"
+      - id: out
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: echo "release_ref=refs/tags/$RELEASE_ID" >> "$GITHUB_OUTPUT"
+      - name: Explicitly dispatch automated release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: gh workflow run release.yml --ref main -f release_id="$RELEASE_ID" -f release_ref="refs/tags/$RELEASE_ID"

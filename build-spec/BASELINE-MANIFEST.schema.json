@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cursor Build Machine Spec Baseline Manifest",
+  "type": "object",
+  "required": [
+    "schema_version", "baseline_id", "status", "source_repo", "source_working_commit",
+    "created_at", "supersedes", "approved_delta_ids", "approval",
+    "acceptance_registry", "acceptance_count", "file_inventory", "content_sha256"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "baseline_id": { "type": "string", "pattern": "^BS-P[0-9]+-[0-9]{3}$" },
+    "status": { "const": "LOCKED" },
+    "source_repo": { "const": "OWNER/PRODUCT-DESIGN-REPO" },
+    "source_working_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "supersedes": { "type": ["string", "null"] },
+    "approved_delta_ids": { "type": "array", "items": { "type": "string", "pattern": "^BD-[0-9]{3,}$" }, "uniqueItems": true },
+    "approval": {
+      "type": "object",
+      "required": ["status", "decision_ref"],
+      "properties": {
+        "status": { "const": "USER_APPROVED" },
+        "decision_ref": { "type": "string", "minLength": 1 }
+      }
+    },
+    "acceptance_registry": { "type": "string", "minLength": 1 },
+    "acceptance_count": { "type": "integer", "minimum": 0 },
+    "file_inventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "content_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "additionalProperties": true
+}

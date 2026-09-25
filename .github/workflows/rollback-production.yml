@@ -1,0 +1,43 @@
+name: Rollback Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Release whose target set should be rolled back
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nff-production-release
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate release definition
+        run: node harness/scripts/validate-release.mjs --release "${{ inputs.release_id }}"
+      - name: Roll back previous Cloudflare code deployment
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+          CLOUDFLARE_WORKER_NAME: ${{ secrets.CLOUDFLARE_WORKER_NAME }}
+        run: npm run deploy:rollback -- --environment production --release "${{ inputs.release_id }}" --auto-previous
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "rollback-${{ inputs.release_id }}"
+          path: .deploy-output/

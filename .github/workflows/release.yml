@@ -1,0 +1,140 @@
+name: Automated Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Approved release ID
+        required: true
+        type: string
+      release_ref:
+        description: Git ref to deploy, normally refs/tags/REL-Px-NNN
+        required: true
+        type: string
+  push:
+    tags:
+      - "REL-P*-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nff-production-release
+  cancel-in-progress: false
+
+env:
+  RELEASE_ID: ${{ inputs.release_id || github.ref_name }}
+  RELEASE_REF: ${{ inputs.release_ref || github.ref }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_REF }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Repository gates
+        run: npm run gate
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Product CI
+        run: npm run product:ci
+      - name: Validate release manifest
+        run: node harness/scripts/validate-release.mjs --release "$RELEASE_ID"
+
+  staging:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_REF }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Rebuild and verify exact release ref
+        run: npm run product:ci
+      - name: Deploy staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+          CLOUDFLARE_WORKER_NAME: ${{ secrets.CLOUDFLARE_WORKER_NAME }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          DEPLOY_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+        run: npm run deploy -- --environment staging --release "$RELEASE_ID"
+      - name: Staging smoke
+        env:
+          DEPLOY_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+        run: npm run deploy:smoke -- --environment staging --release "$RELEASE_ID"
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Browser release gate
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+        run: npm run product:release-ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "staging-${{ env.RELEASE_ID }}"
+          path: |
+            .release-state/
+            .deploy-output/
+
+  production:
+    needs: [validate, staging]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_REF }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Rebuild and verify exact release ref
+        run: npm run product:ci
+      - name: Deploy production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+          CLOUDFLARE_WORKER_NAME: ${{ secrets.CLOUDFLARE_WORKER_NAME }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          DEPLOY_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+          CLOUDFLARE_PAGES_PRODUCTION_BRANCH: main
+        run: npm run deploy -- --environment production --release "$RELEASE_ID"
+      - name: Production smoke
+        env:
+          DEPLOY_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+        run: npm run deploy:smoke -- --environment production --release "$RELEASE_ID"
+      - name: Automatic rollback only for code targets already changed by this failed release
+        if: failure()
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+          CLOUDFLARE_WORKER_NAME: ${{ secrets.CLOUDFLARE_WORKER_NAME }}
+        run: npm run deploy:rollback -- --environment production --release "$RELEASE_ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "production-${{ env.RELEASE_ID }}"
+          path: |
+            .release-state/
+            .deploy-output/
