@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "release_id": "REL-P1-001",
+  "status": "RELEASE_READY",
+  "build_spec_id": "BS-P1-001",
+  "source_commit": "0000000000000000000000000000000000000000",
+  "sprint_ids": ["SP-P1-001"],
+  "approval": {
+    "status": "PENDING",
+    "decision_ref": null
+  },
+  "targets": [
+    {
+      "target_id": "database",
+      "type": "SUPABASE_MIGRATIONS",
+      "enabled": false,
+      "migrations_path": "supabase/migrations",
+      "migration_policy": "FORWARD_COMPATIBLE_EXPAND_ONLY",
+      "human_reviewed": false
+    },
+    {
+      "target_id": "edge",
+      "type": "CLOUDFLARE_WORKER",
+      "enabled": false,
+      "config_path": "wrangler.jsonc"
+    },
+    {
+      "target_id": "web",
+      "type": "CLOUDFLARE_PAGES",
+      "enabled": false,
+      "artifact_path": "dist"
+    }
+  ],
+  "health_checks": [
+    {
+      "name": "web-root",
+      "base_url_env": "DEPLOY_BASE_URL",
+      "path": "/",
+      "expected_status": [200],
+      "attempts": 6,
+      "interval_ms": 5000
+    }
+  ],
+  "rollback": {
+    "cloudflare_code_auto": true,
+    "database_auto": false,
+    "database_strategy": "FORWARD_ONLY"
+  }
+}

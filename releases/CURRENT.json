@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "active_release": null,
+  "status": "HOLD",
+  "automatic_production_release": true,
+  "trigger": "approved REL-* promotion tag",
+  "reason": "No approved Release Candidate."
+}

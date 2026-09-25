@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "skills": [
+    {
+      "id": "task-planner",
+      "version": "1.0.0",
+      "path": "skills/task-planner/SKILL.md",
+      "actor": "PLANNING_AGENT",
+      "phase": "SPRINT_PLANNING"
+    },
+    {
+      "id": "implementer",
+      "version": "1.0.0",
+      "path": "skills/implementer/SKILL.md",
+      "actor": "CURSOR",
+      "phase": "IMPLEMENTATION"
+    },
+    {
+      "id": "test-builder",
+      "version": "1.0.0",
+      "path": "skills/test-builder/SKILL.md",
+      "actor": "CURSOR",
+      "phase": "IMPLEMENTATION"
+    },
+    {
+      "id": "debugger",
+      "version": "1.0.0",
+      "path": "skills/debugger/SKILL.md",
+      "actor": "CURSOR",
+      "phase": "DEBUG"
+    },
+    {
+      "id": "reviewer",
+      "version": "1.0.0",
+      "path": "skills/reviewer/SKILL.md",
+      "actor": "CURSOR_REVIEW",
+      "phase": "REVIEW"
+    },
+    {
+      "id": "ui-verifier",
+      "version": "1.0.0",
+      "path": "skills/ui-verifier/SKILL.md",
+      "actor": "CURSOR_REVIEW",
+      "phase": "VERIFY"
+    },
+    {
+      "id": "db-migration",
+      "version": "1.0.0",
+      "path": "skills/db-migration/SKILL.md",
+      "actor": "CURSOR",
+      "phase": "IMPLEMENTATION"
+    },
+    {
+      "id": "release-agent",
+      "version": "1.0.0",
+      "path": "skills/release-agent/SKILL.md",
+      "actor": "RELEASE_AUTOMATION",
+      "phase": "RELEASE"
+    }
+  ]
+}
