@@ -3,7 +3,7 @@
 ## 1. Authority
 
 ```text
-NodeFF/working = Design Current Truth
+PRODUCT-DESIGN-REPO/working = Design Current Truth
 build-spec     = frozen implementation truth for a build baseline
 backlog        = work derived from that baseline
 sprint/task    = selected execution scope
