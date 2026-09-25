@@ -11,7 +11,7 @@
     "schema_version": { "const": 1 },
     "baseline_id": { "type": "string", "pattern": "^BS-P[0-9]+-[0-9]{3}$" },
     "status": { "const": "LOCKED" },
-    "source_repo": { "const": "OWNER/PRODUCT-DESIGN-REPO" },
+    "source_repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
     "source_working_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "created_at": { "type": "string", "format": "date-time" },
     "supersedes": { "type": ["string", "null"] },
