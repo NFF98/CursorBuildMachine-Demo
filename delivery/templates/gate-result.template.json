@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "sprint_id": "SP-P1-001",
+  "build_spec_id": "BS-P1-001",
+  "status": "PASS",
+  "implementation_commit": "0000000000000000000000000000000000000000",
+  "verified_at": "2026-09-24T00:00:00Z",
+  "required_acceptance_passed": true,
+  "regression_passed": true,
+  "blocking_findings": [],
+  "open_design_deltas": []
+}

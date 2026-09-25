@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "delta_id": "BD-001",
+  "type": "DESIGN_DELTA",
+  "status": "OPEN",
+  "source_finding_ids": ["BF-001"],
+  "affected_build_spec": "BS-P1-001",
+  "affected_tasks": ["T001"],
+  "affected_contracts": [],
+  "affected_acceptance": [],
+  "changes_contract_semantics": true,
+  "owner": "HUMAN_GOVERNANCE",
+  "user_decision_required": true,
+  "user_decision": {
+    "status": "PENDING",
+    "decision_ref": null
+  },
+  "replacement_build_spec_required": true,
+  "upstream_working_commit": null,
+  "replacement_build_spec": null,
+  "verification": []
+}
