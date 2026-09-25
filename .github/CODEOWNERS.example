@@ -1,0 +1,5 @@
+# Optional CODEOWNERS example
+# Rename this file to CODEOWNERS only when the project has a real independent reviewer/team.
+# Do not enable required Code Owner review for a single-owner repository unless another eligible reviewer exists.
+
+* @YOUR-GITHUB-USER-OR-TEAM
