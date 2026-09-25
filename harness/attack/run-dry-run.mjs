@@ -41,7 +41,7 @@ function makeBaseline(id,{sourceCommit,supersedes=null,deltas=[],decisionRef}){
   const inventory=rels.map(rel=>({path:rel,sha256:fileSha(path.join(repo,base,rel))}));
   const aggregate=sha(inventory.map(x=>x.path+":"+x.sha256+"\n").join(""));
   write(base+"/manifest.json",{
-    schema_version:1,baseline_id:id,status:"LOCKED",source_repo:"OWNER/PRODUCT-DESIGN-REPO",
+    schema_version:1,baseline_id:id,status:"LOCKED",source_repo:read("harness/policy/repo-policy.json").design_source_repo,
     source_working_commit:sourceCommit,created_at:"2026-09-24T00:00:00Z",
     supersedes,approved_delta_ids:deltas,
     approval:{status:"USER_APPROVED",decision_ref:decisionRef},
