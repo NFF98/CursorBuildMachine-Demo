@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
 
 const source=process.cwd();
-const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"nff-attack-"));
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"cursor-build-machine-attack-"));
 const repo=path.join(tmp,"repo");
 const results=[];
 
