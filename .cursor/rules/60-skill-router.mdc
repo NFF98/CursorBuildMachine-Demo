@@ -6,7 +6,8 @@ alwaysApply: true
 - Before executing an active Task, read skills/REGISTRY.json.
 - Read every SKILL.md listed by the Task required_skills before modifying files.
 - A Skill describes method; it never grants write permission beyond Task allowed_write_paths.
-- Planning work uses task-planner.
+- Sprint Planning uses task-planner, but this is owned by the external Planning Agent (ChatGPT), not Cursor execution.
+- Cursor MUST NOT invoke task-planner, create/redefine Sprint Tasks, or place task-planner in an active implementation Task required_skills.
 - Product implementation uses implementer.
 - Adding or changing mapped tests uses test-builder.
 - Reproducing/fixing a failure uses debugger.
@@ -14,4 +15,5 @@ alwaysApply: true
 - UI/UX verification requires ui-verifier when the Task touches UI or visual Acceptance.
 - Database migration work requires db-migration.
 - Release execution follows release-agent and approved release workflows.
+- If the active Task needs re-planning, broader write scope, changed AC/Test mapping, or changed commands: STOP, record a Finding, and return to the Planning Agent; do not edit Sprint planning artifacts.
 - If a needed Skill is not registered, do not invent a new operating method inside the Task; stop and request governance update.

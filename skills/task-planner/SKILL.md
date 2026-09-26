@@ -4,6 +4,13 @@
 
 把 Locked Build Spec + READY Backlog Item 拆成最小、可驗證、不可自行擴張產品語意的 Sprint Task。
 
+## Ownership
+
+- Actor: `PLANNING_AGENT` (current operating model: ChatGPT).
+- Use only while preparing/revising a Sprint in HOLD/PLANNED governance flow.
+- This is not a Cursor execution Skill and must not appear in an implementation Task `required_skills`.
+- After Human Sprint Activation, Cursor consumes the approved Task definition; any re-plan requires BLOCK/Finding and return to Planning Agent.
+
 ## Read
 
 1. `build-spec/CURRENT.json`

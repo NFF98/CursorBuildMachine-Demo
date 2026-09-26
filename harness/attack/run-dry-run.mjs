@@ -26,6 +26,10 @@ const commit=msg=>{must(git("add",".").status===0,"git add failed"); const r=git
 const cleanTo=ref=>{must(git("reset","--hard",ref).status===0,"git reset failed"); git("clean","-fd");};
 
 fs.cpSync(source,repo,{recursive:true,filter:p=>!p.includes(path.sep+".git")&&!p.includes(path.sep+"node_modules")&&!p.includes(path.sep+".attack-dry-run")});
+fs.rmSync(path.join(repo,"delivery","sprints"),{recursive:true,force:true});
+fs.mkdirSync(path.join(repo,"delivery","sprints"),{recursive:true});
+fs.rmSync(path.join(repo,"delivery","evidence"),{recursive:true,force:true});
+fs.mkdirSync(path.join(repo,"delivery","evidence"),{recursive:true});
 must(git("init","-b","main").status===0,"git init failed");
 git("config","user.name","Cursor Build Machine Attack Dry Run");
 git("config","user.email","attack@example.invalid");
@@ -69,26 +73,26 @@ function baseWorkState(id,status="ACTIVE",taskStatus="IN_PROGRESS"){
     status,automation_mode:"SAFE_AUTOMATION",reason:"ATTACK_DRY_RUN"
   });
   write("delivery/sprints/SP-P9-001/manifest.json",{
-    schema_version:1,sprint_id:"SP-P9-001",build_spec_id:id,status,
+    schema_version:1,sprint_id:"SP-P9-001",build_spec_id:id,status,backlog_item_ids:["BL-P9-001"],
     entry_gate:{build_spec_locked:true,baseline_gate_passed:true,acceptance_mapped:true,user_approved:true,approval_ref:"DRYRUN-SPRINT"}
   });
   write("delivery/sprints/SP-P9-001/tasks.json",{schema_version:3,sprint_id:"SP-P9-001",tasks:[{
     task_id:"T001",backlog_item_ids:["BL-P9-001"],title:"Fake task",status:taskStatus,build_spec_id:id,
-    scope:["fake"],non_scope:[],acceptance_links:[{acceptance_id:"F99-AC-001",test_id:"TEST-F99-001"}],
+    scope:["fake"],non_scope:["no extra scope"],acceptance_links:[{acceptance_id:"F99-AC-001",test_id:"TEST-F99-001"}],
     allowed_write_paths:["src/demo/","tests/behavior/"],required_commands:["npm run gate"],
     required_skills:["implementer","test-builder","reviewer"],parallel_safe:false,product_decision_allowed:false,
     blocked_by:[],completion_evidence:[]
   }]});
 }
-function expectFail(name,script,{base,head="HEAD"}={}){
-  const env={}; if(base) env.BASE_SHA=base; if(head) env.HEAD_SHA=head;
+function expectFail(name,script,{base,head="HEAD",env:extraEnv={}}={}){
+  const env={...extraEnv}; if(base) env.BASE_SHA=base; if(head) env.HEAD_SHA=head;
   const r=run("node",[script],{env});
   const pass=r.status!==0;
   results.push({name,expected:"FAIL",actual:pass?"FAIL":"PASS",ok:pass,detail:(r.stderr||r.stdout).trim().split("\n").slice(0,4).join(" | ")});
   if(!pass) throw new Error("Attack unexpectedly passed: "+name+"\n"+r.stdout+"\n"+r.stderr);
 }
-function expectPass(name,cmd,args,{base,head="HEAD"}={}){
-  const env={}; if(base) env.BASE_SHA=base; if(head) env.HEAD_SHA=head;
+function expectPass(name,cmd,args,{base,head="HEAD",env:extraEnv={}}={}){
+  const env={...extraEnv}; if(base) env.BASE_SHA=base; if(head) env.HEAD_SHA=head;
   const r=run(cmd,args,{env});
   const pass=r.status===0;
   results.push({name,expected:"PASS",actual:pass?"PASS":"FAIL",ok:pass,detail:(r.stderr||r.stdout).trim().split("\n").slice(0,4).join(" | ")});
@@ -105,6 +109,8 @@ const governanceHarness=[
   "harness/scripts/validate-sprint.mjs",
   "harness/scripts/validate-findings.mjs",
   "harness/scripts/validate-evidence.mjs",
+  "harness/scripts/validate-test-integrity.mjs",
+  "harness/scripts/validate-engineering-quality.mjs",
   "harness/scripts/validate-release.mjs",
   "harness/scripts/validate-change-scope.mjs"
 ];
@@ -116,6 +122,107 @@ baseWorkState("BS-P9-001");
 write("package-lock.json",{name:"cursor-build-machine",version:"0.0.0",lockfileVersion:3,requires:true,packages:{"":{name:"cursor-build-machine",version:"0.0.0"}}});
 const fixtureBase=commit("fixture: valid active sprint");
 expectHarnessPass("valid fixture baseline",governanceHarness,{});
+
+
+// Role-boundary positive/negative cases.
+cleanTo(fixtureBase);
+write("build-spec/CURRENT.json",{schema_version:1,active_baseline:"BS-P9-001",implementation_enabled:false,reason:"ROLE_PLANNING_HOLD"});
+write("delivery/CURRENT-SPRINT.json",{schema_version:1,active_sprint:null,active_build_spec:null,active_task:null,status:"HOLD",automation_mode:"SAFE_AUTOMATION",reason:"ROLE_PLANNING_HOLD"});
+const roleQueue=read("delivery/backlog/QUEUE.json"); roleQueue.items[0].status="READY"; delete roleQueue.items[0].sprint_id; write("delivery/backlog/QUEUE.json",roleQueue);
+const rolePlanningBase=commit("fixture: role planning hold");
+write("delivery/sprints/SP-P9-002/manifest.json",{
+  schema_version:1,sprint_id:"SP-P9-002",build_spec_id:"BS-P9-001",status:"PLANNED",goal:"role planning",scope:["fake"],non_scope:["none"],tasks_file:"tasks.json",backlog_item_ids:["BL-P9-001"],
+  entry_gate:{build_spec_locked:true,baseline_gate_passed:true,acceptance_mapped:true,user_approved:false,approval_ref:null}
+});
+write("delivery/sprints/SP-P9-002/tasks.json",{schema_version:3,sprint_id:"SP-P9-002",tasks:[{
+  task_id:"T001",backlog_item_ids:["BL-P9-001"],title:"Planned by Planning Agent",status:"PLANNED",build_spec_id:"BS-P9-001",
+  scope:["fake"],non_scope:["none"],acceptance_links:[{acceptance_id:"F99-AC-001",test_id:"TEST-F99-001"}],
+  allowed_write_paths:["src/demo/","tests/behavior/"],required_commands:["npm run gate"],
+  required_skills:["implementer","test-builder","reviewer"],parallel_safe:false,product_decision_allowed:false,blocked_by:[],completion_evidence:[]
+}]});
+const rolePlanned=commit("positive: planning agent creates planned sprint");
+expectPass("Planning Agent may create Sprint plan while HOLD","node",["harness/scripts/validate-change-scope.mjs"],{base:rolePlanningBase,head:rolePlanned});
+
+cleanTo(fixtureBase);
+const activePlan=read("delivery/sprints/SP-P9-001/tasks.json");
+activePlan.tasks[0].allowed_write_paths.push("src/unauthorized-expansion/");
+write("delivery/sprints/SP-P9-001/tasks.json",activePlan);
+const replan=commit("attack: cursor expands active task write scope");
+expectFail("Cursor cannot rewrite Active Sprint Task plan","harness/scripts/validate-change-scope.mjs",{base:fixtureBase,head:replan});
+cleanTo(fixtureBase);
+
+const plannerInjected=read("delivery/sprints/SP-P9-001/tasks.json");
+plannerInjected.tasks[0].required_skills.push("task-planner");
+write("delivery/sprints/SP-P9-001/tasks.json",plannerInjected);
+const plannerSkill=commit("attack: cursor injects task-planner into execution task");
+expectFail("Execution Task cannot require task-planner","harness/scripts/validate-sprint.mjs",{base:fixtureBase,head:plannerSkill});
+cleanTo(fixtureBase);
+
+// Build Readiness / Coding Quality attack cases.
+write("generated/evil.json","{}\n");
+const unclassifiedWrite=commit("attack: undeclared generated output");
+expectFail("Fail-closed scope blocks undeclared generated/root paths","harness/scripts/validate-change-scope.mjs",{base:fixtureBase,head:unclassifiedWrite});
+cleanTo(fixtureBase);
+
+const badPkg=read("package.json"); badPkg.scripts["test:contract"]="node -e \"process.exit(0)\""; write("package.json",badPkg);
+const packageRewrite=commit("attack: rewrite test command during active task");
+expectFail("Active Task cannot rewrite package/test tooling","harness/scripts/validate-change-scope.mjs",{base:fixtureBase,head:packageRewrite});
+cleanTo(fixtureBase);
+
+// PLANNED Sprint must be audited while CURRENT-SPRINT is HOLD.
+write("build-spec/CURRENT.json",{schema_version:1,active_baseline:"BS-P9-001",implementation_enabled:false,reason:"PLANNED_AUDIT"});
+write("delivery/CURRENT-SPRINT.json",{schema_version:1,active_sprint:null,active_build_spec:null,active_task:null,status:"HOLD",automation_mode:"SAFE_AUTOMATION",reason:"PLANNED_AUDIT"});
+const pq=read("delivery/backlog/QUEUE.json"); pq.items[0].status="READY"; delete pq.items[0].sprint_id; write("delivery/backlog/QUEUE.json",pq);
+const pm=read("delivery/sprints/SP-P9-001/manifest.json"); pm.status="PLANNED"; pm.entry_gate.user_approved=false; pm.entry_gate.approval_ref=null; write("delivery/sprints/SP-P9-001/manifest.json",pm);
+const pt=read("delivery/sprints/SP-P9-001/tasks.json"); pt.tasks[0].status="PLANNED"; pt.tasks[0].acceptance_links=[]; write("delivery/sprints/SP-P9-001/tasks.json",pt);
+const plannedMissingAc=commit("attack: planned sprint omits mapped acceptance");
+expectFail("PLANNED Sprint exact AC coverage cannot omit Acceptance","harness/scripts/validate-sprint.mjs",{base:fixtureBase,head:plannedMissingAc});
+cleanTo(fixtureBase);
+
+// Active Task cannot bypass an unfinished blocked_by dependency.
+const depRegistry=read("build-spec/baselines/BS-P9-001/registries/acceptance-test-registry.json");
+depRegistry.entries.push({acceptance_id:"F99-AC-002",test_id:"TEST-F99-002",contract_status:"READY_FOR_IMPLEMENTATION"});
+write("build-spec/baselines/BS-P9-001/registries/acceptance-test-registry.json",depRegistry);
+const depQ=read("delivery/backlog/QUEUE.json");
+depQ.items.push({backlog_item_id:"BL-P9-002",source:"BUILD_SPEC",build_spec_id:"BS-P9-001",function_id:"F99",title:"Blocker",status:"SPRINTED",priority:"P0",scope_contracts:["functions/demo.md"],acceptance_links:[{acceptance_id:"F99-AC-002",test_id:"TEST-F99-002"}],dependencies:[],sprint_id:"SP-P9-001",product_decision_allowed:false});
+write("delivery/backlog/QUEUE.json",depQ);
+const depM=read("delivery/sprints/SP-P9-001/manifest.json"); depM.backlog_item_ids.push("BL-P9-002"); write("delivery/sprints/SP-P9-001/manifest.json",depM);
+const depT=read("delivery/sprints/SP-P9-001/tasks.json");
+depT.tasks[0].blocked_by=["T002"];
+depT.tasks.push({task_id:"T002",backlog_item_ids:["BL-P9-002"],title:"Unfinished blocker",status:"PLANNED",build_spec_id:"BS-P9-001",scope:["blocker"],non_scope:["none"],acceptance_links:[{acceptance_id:"F99-AC-002",test_id:"TEST-F99-002"}],allowed_write_paths:["src/blocker/","tests/behavior/"],required_commands:["npm run gate"],required_skills:["implementer","test-builder","reviewer"],parallel_safe:false,product_decision_allowed:false,blocked_by:[],completion_evidence:[]});
+write("delivery/sprints/SP-P9-001/tasks.json",depT);
+const bypassDep=commit("attack: start task before blocker is done");
+expectFail("Active Task cannot bypass unfinished blocked_by Task","harness/scripts/validate-sprint.mjs",{base:fixtureBase,head:bypassDep});
+cleanTo(fixtureBase);
+
+// FAIL evidence cannot satisfy Task closure.
+const failEv="EV-SP-P9-001-T001-001";
+write("delivery/evidence/"+failEv+".json",{schema_version:2,evidence_id:failEv,kind:"TEST_RESULT",build_spec_id:"BS-P9-001",sprint_id:"SP-P9-001",task_id:"T001",acceptance_ids:["F99-AC-001"],test_ids:["TEST-F99-001"],status:"FAIL",command:null,review_checks:null,blocking_findings:[],locator:"dry-run://failed-test",sha256:null,source_commit:fixtureBase,recorded_at:"2026-09-26T00:00:00Z"});
+const failTasks=read("delivery/sprints/SP-P9-001/tasks.json"); failTasks.tasks[0].status="VERIFIED"; failTasks.tasks[0].completion_evidence=[failEv]; write("delivery/sprints/SP-P9-001/tasks.json",failTasks);
+const fakeEvidence=commit("attack: fail evidence closes task");
+expectFail("FAIL Evidence cannot close Task","harness/scripts/validate-evidence.mjs",{base:fixtureBase,head:fakeEvidence});
+cleanTo(fixtureBase);
+
+// Engineering review must be complete.
+const reviewEv="EV-SP-P9-001-T001-002";
+write("delivery/evidence/"+reviewEv+".json",{schema_version:2,evidence_id:reviewEv,kind:"REVIEW",build_spec_id:"BS-P9-001",sprint_id:"SP-P9-001",task_id:"T001",acceptance_ids:[],test_ids:[],status:"PASS",command:null,review_checks:{semantic_drift:"PASS"},blocking_findings:[],locator:"dry-run://weak-review",sha256:null,source_commit:fixtureBase,recorded_at:"2026-09-26T00:00:00Z"});
+const weakReview=commit("attack: incomplete engineering review");
+expectFail("Incomplete Engineering Quality REVIEW is rejected","harness/scripts/validate-evidence.mjs",{base:fixtureBase,head:weakReview});
+cleanTo(fixtureBase);
+
+// Test anti-cheat and executable mapped Test traceability.
+write("tests/behavior/cheat.test.ts",'import { test, expect } from "vitest";\ntest.skip("TEST-F99-001 fake",()=>{expect(true).toBe(true);});\n');
+const skippedTest=commit("attack: skipped fake-green test");
+expectFail("skip/todo/fake-green test patterns are rejected","harness/scripts/validate-engineering-quality.mjs",{base:fixtureBase,head:skippedTest});
+cleanTo(fixtureBase);
+expectFail("Active mapped Test ID must exist as executable test()","harness/scripts/validate-test-integrity.mjs",{base:fixtureBase,head:"HEAD",env:{REQUIRE_ACTIVE_TASK_TESTS:"1"}});
+
+// First real implementation change requires reproducible dependencies.
+fs.rmSync(path.join(repo,"package-lock.json"),{force:true});
+write("src/demo/needs-lock.ts","export const needsLock=true;\n");
+const noLock=commit("attack: implementation without lockfile");
+expectFail("First implementation change requires package-lock.json","ci/run-product-ci.mjs",{base:fixtureBase,head:noLock});
+cleanTo(fixtureBase);
 
 write("src/outside/hack.ts","export const hack=true;\n");
 const outside=commit("attack: write outside task allowlist");
@@ -211,7 +318,7 @@ write("build-spec/CURRENT.json",{schema_version:1,active_baseline:"BS-P9-002",im
 const goodRebaseline=commit("positive: approved rebaseline remains blocked");
 expectHarnessPass("Approved rebaseline transition",governanceHarness,{base:blockedBase,head:goodRebaseline});
 
-// Positive Sprint Activation transition: only the four state-control files may cross HOLD -> ACTIVE.
+// Positive Sprint Activation transition: control files may cross HOLD -> ACTIVE without pretending product tests already exist.
 cleanTo(fixtureBase);
 write("build-spec/CURRENT.json",{schema_version:1,active_baseline:"BS-P9-001",implementation_enabled:false,reason:"DRYRUN_PLANNED"});
 write("delivery/CURRENT-SPRINT.json",{schema_version:1,active_sprint:null,active_build_spec:null,active_task:null,status:"HOLD",automation_mode:"SAFE_AUTOMATION",reason:"DRYRUN_PLANNED"});
@@ -223,6 +330,10 @@ write("delivery/sprints/SP-P9-001/manifest.json",plannedManifest);
 const plannedTasks=read("delivery/sprints/SP-P9-001/tasks.json");
 plannedTasks.tasks[0].status="PLANNED";
 write("delivery/sprints/SP-P9-001/tasks.json",plannedTasks);
+const plannedBacklog=read("delivery/backlog/QUEUE.json");
+plannedBacklog.items[0].status="READY";
+delete plannedBacklog.items[0].sprint_id;
+write("delivery/backlog/QUEUE.json",plannedBacklog);
 const activationBase=commit("fixture: planned sprint awaiting activation");
 
 write("build-spec/CURRENT.json",{schema_version:1,active_baseline:"BS-P9-001",implementation_enabled:true,reason:"DRYRUN_APPROVED_ACTIVATION"});
@@ -234,12 +345,17 @@ write("delivery/sprints/SP-P9-001/manifest.json",activeManifest);
 const activeTasks=read("delivery/sprints/SP-P9-001/tasks.json");
 activeTasks.tasks[0].status="IN_PROGRESS";
 write("delivery/sprints/SP-P9-001/tasks.json",activeTasks);
+const activeBacklog=read("delivery/backlog/QUEUE.json");
+activeBacklog.items[0].status="SPRINTED";
+activeBacklog.items[0].sprint_id="SP-P9-001";
+write("delivery/backlog/QUEUE.json",activeBacklog);
 write("delivery/CURRENT-SPRINT.json",{
   schema_version:1,active_sprint:"SP-P9-001",active_build_spec:"BS-P9-001",active_task:"T001",
   status:"ACTIVE",automation_mode:"SAFE_AUTOMATION",reason:"DRYRUN_APPROVED_ACTIVATION"
 });
 const activationHead=commit("positive: approved sprint activation");
-expectPass("Approved Sprint Activation transition","node",["harness/scripts/validate-change-scope.mjs"],{base:activationBase,head:activationHead});
+expectHarnessPass("Approved Sprint Activation transition",governanceHarness,{base:activationBase,head:activationHead});
+expectPass("Activation control-only Product CI does not require fake pre-code tests","node",["ci/run-product-ci.mjs"],{base:activationBase,head:activationHead});
 
 cleanTo(activationBase);
 write("build-spec/CURRENT.json",{schema_version:1,active_baseline:"BS-P9-001",implementation_enabled:true,reason:"DRYRUN_APPROVED_ACTIVATION"});
@@ -251,6 +367,10 @@ write("delivery/sprints/SP-P9-001/manifest.json",maliciousManifest);
 const maliciousTasks=read("delivery/sprints/SP-P9-001/tasks.json");
 maliciousTasks.tasks[0].status="IN_PROGRESS";
 write("delivery/sprints/SP-P9-001/tasks.json",maliciousTasks);
+const maliciousBacklog=read("delivery/backlog/QUEUE.json");
+maliciousBacklog.items[0].status="SPRINTED";
+maliciousBacklog.items[0].sprint_id="SP-P9-001";
+write("delivery/backlog/QUEUE.json",maliciousBacklog);
 write("delivery/CURRENT-SPRINT.json",{
   schema_version:1,active_sprint:"SP-P9-001",active_build_spec:"BS-P9-001",active_task:"T001",
   status:"ACTIVE",automation_mode:"SAFE_AUTOMATION",reason:"DRYRUN_APPROVED_ACTIVATION"
