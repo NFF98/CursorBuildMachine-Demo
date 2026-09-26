@@ -32,6 +32,27 @@ Product Working clean
 → Release
 ```
 
+## 2.1 Human / Planning Agent / Cursor Boundary
+
+```text
+HUMAN
+  Product / Governance authority
+        ↓
+ChatGPT = sole Planning Agent
+  Backlog → Sprint Plan → Task definitions → Readiness Audit
+        ↓
+HUMAN Sprint Activation
+        ↓
+Cursor = Execution Agent
+  Implement → Test → Debug → Evidence → Review
+```
+
+- HUMAN owns Product decisions, Sprint Activation, Design Delta approval, Sprint Close and Release Approval.
+- ChatGPT is the sole Planning Agent for this operating model. Planning happens while Sprint is HOLD/PLANNED and uses the registered `task-planner` method.
+- Cursor does not create or redefine Sprint Tasks. Cursor consumes the active Task and only uses execution/review skills assigned to that Task.
+- Once Sprint is ACTIVE/REVIEW, Sprint manifest/task definitions are execution-immutable to Cursor. Any needed re-plan goes through Finding → BLOCK → Planning Agent / Human governance.
+- `task-planner` is not an execution permission and must never appear in an implementation Task `required_skills`.
+
 ## 3. Backlog Rule
 
 Backlog 是 Build Spec 的 projection，不是新的需求層。
@@ -58,7 +79,22 @@ Task 必須固定：
 
 ## 5. Task Close
 
-`VERIFIED/CLOSED` Task 必須有 Evidence record，且 Evidence 必須指回相同 Build Spec / Sprint / Task。
+Task completion 不是「Cursor 說完成」或「測試綠」：
+
+```text
+Mapped AC/Test PASS
++ required command PASS
++ Type / Lint / Security / Build PASS
++ Engineering Quality Review PASS
++ Semantic Drift Review PASS
++ Evidence complete
+= VERIFIED / CLOSED
+```
+
+`REVIEW` 前，mapped AC/Test + required commands 必須有 PASS Evidence。
+`VERIFIED/CLOSED` 前，另外必須有完整 Reviewer PASS，包含 readability、maintainability、algorithmic complexity、performance risk、architecture boundary、type safety、error handling、duplication、security、test quality、semantic drift。
+
+Task 的 `blocked_by` 未達 VERIFIED/CLOSED 時，dependent Task 不得成為 active Task。
 
 ## 6. Fast Loop
 

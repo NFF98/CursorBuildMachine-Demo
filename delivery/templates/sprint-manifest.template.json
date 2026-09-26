@@ -13,5 +13,8 @@
     "acceptance_mapped": true,
     "user_approved": false,
     "approval_ref": null
-  }
+  },
+  "backlog_item_ids": [
+    "BL-P1-001"
+  ]
 }

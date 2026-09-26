@@ -39,6 +39,15 @@ export default tseslint.config(
     files: ["**/*.{ts,tsx,mts,cts}"]
   })),
   {
+    files: ["**/*.{js,mjs,cjs,ts,tsx,mts,cts}"],
+    rules: {
+      complexity: ["error", 15],
+      "max-depth": ["error", 4],
+      "max-params": ["error", 5],
+      "max-lines-per-function": ["error", { max: 120, skipBlankLines: true, skipComments: true }]
+    }
+  },
+  {
     files: ["**/*.{ts,tsx,mts,cts}"],
     languageOptions: {
       globals,
@@ -47,7 +56,9 @@ export default tseslint.config(
       }
     },
     rules: {
-      "no-undef": "off"
+      "no-undef": "off",
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/ban-ts-comment": "error"
     }
   }
 );

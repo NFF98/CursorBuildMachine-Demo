@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "gate": "node harness/scripts/validate-baseline.mjs && node harness/scripts/governance-gate.mjs && node harness/scripts/validate-activation.mjs && node harness/scripts/validate-skills.mjs && node harness/scripts/validate-toolchain.mjs && node harness/scripts/validate-backlog.mjs && node harness/scripts/validate-sprint.mjs && node harness/scripts/validate-findings.mjs && node harness/scripts/validate-evidence.mjs && node harness/scripts/validate-release.mjs && node harness/scripts/validate-change-scope.mjs",
+    "gate": "node harness/scripts/validate-baseline.mjs && node harness/scripts/governance-gate.mjs && node harness/scripts/validate-activation.mjs && node harness/scripts/validate-skills.mjs && node harness/scripts/validate-toolchain.mjs && node harness/scripts/validate-backlog.mjs && node harness/scripts/validate-sprint.mjs && node harness/scripts/validate-findings.mjs && node harness/scripts/validate-evidence.mjs && node harness/scripts/validate-test-integrity.mjs && node harness/scripts/validate-engineering-quality.mjs && node harness/scripts/validate-release.mjs && node harness/scripts/validate-change-scope.mjs",
     "gate:baseline": "node harness/scripts/validate-baseline.mjs",
     "gate:governance": "node harness/scripts/governance-gate.mjs",
     "gate:activation": "node harness/scripts/validate-activation.mjs",
@@ -36,7 +36,10 @@
     "release:validate": "node harness/scripts/validate-release.mjs",
     "deploy": "node deploy/scripts/deploy.mjs",
     "deploy:smoke": "node deploy/scripts/smoke.mjs",
-    "deploy:rollback": "node deploy/scripts/rollback.mjs"
+    "deploy:rollback": "node deploy/scripts/rollback.mjs",
+    "gate:test-integrity": "node harness/scripts/validate-test-integrity.mjs",
+    "gate:engineering-quality": "node harness/scripts/validate-engineering-quality.mjs",
+    "build": "tsc --project tsconfig.build.json"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

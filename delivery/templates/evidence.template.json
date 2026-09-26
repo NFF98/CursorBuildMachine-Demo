@@ -1,14 +1,22 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "evidence_id": "EV-SP-P1-001-T001-001",
   "kind": "TEST_RESULT",
   "build_spec_id": "BS-P1-001",
   "sprint_id": "SP-P1-001",
   "task_id": "T001",
-  "acceptance_ids": ["F00-AC-001"],
-  "test_ids": ["TEST-F00-001"],
+  "acceptance_ids": [
+    "F00-AC-001"
+  ],
+  "test_ids": [
+    "TEST-F00-001"
+  ],
   "status": "PASS",
   "locator": "github-actions://run/job/artifact",
   "sha256": null,
-  "recorded_at": "2026-09-24T00:00:00Z"
+  "recorded_at": "2026-09-24T00:00:00Z",
+  "command": null,
+  "review_checks": null,
+  "blocking_findings": [],
+  "source_commit": "0000000000000000000000000000000000000000"
 }

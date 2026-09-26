@@ -30,4 +30,4 @@ TypeScript 7.x 暫不採用。Current `typescript-eslint` 官方支援 TypeScrip
 
 ## Lockfile
 
-正式 implementation enable 前必須產生並 commit `package-lock.json`。沒有 lockfile，Product CI 必須 FAIL；Release workflow 使用 `npm ci`，所以無法繞過 reproducible dependency lock。
+Human Sprint Activation 可以先只切換控制狀態；但**第一個真正 implementation change（source / test / generated / migration）必須在同一 PR 產生並 commit `package-lock.json`**。之後沒有 lockfile，Toolchain / Product CI 都必須 FAIL。Release workflow 使用 `npm ci`，所以無法繞過 reproducible dependency lock。
