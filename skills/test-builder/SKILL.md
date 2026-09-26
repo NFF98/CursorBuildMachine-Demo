@@ -44,6 +44,9 @@ Do not introduce Jest or Cypress for the same role without an approved Toolchain
 3. deterministic 能自動化就不得降成純 manual。
 4. 視覺類 machine diff 必須保留 human materiality review。
 5. Test 失敗先判斷 implementation bug / test bug / contract gap。
+6. 每個 mapped Test ID 必須出現在真正 executable `test()/it()` 名稱中，供 machine traceability Gate 驗證。
+7. 禁止 `.skip/.todo/.only`、obvious fake assertion、只驗 truthy 而未驗 AC semantic。
+8. 不得修改既有 verified Test expected semantics 來配合新 code；需要改時開 TEST_BUG / SPEC_AMBIGUITY Finding。
 
 ## Stop
 
