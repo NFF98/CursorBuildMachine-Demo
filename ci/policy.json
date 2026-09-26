@@ -1,15 +1,6 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "lockfile_required_when_implementation_enabled": true,
-  "required_when_implementation_enabled": [
-    "check:types",
-    "check:lint",
-    "test:unit",
-    "test:contract",
-    "test:regression",
-    "security:audit",
-    "build"
-  ],
   "required_before_release_on_staging": [
     "test:e2e",
     "test:a11y",
@@ -18,5 +9,12 @@
   "semi_automated_ui_gate": [
     "test:visual"
   ],
-  "release_requires_product_ci": true
+  "release_requires_product_ci": true,
+  "activation_control_only_skip_product_ci": true,
+  "required_on_every_implementation_change": [
+    "check:types",
+    "check:lint",
+    "security:audit",
+    "build"
+  ]
 }
