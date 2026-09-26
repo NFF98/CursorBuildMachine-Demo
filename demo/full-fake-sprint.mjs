@@ -18,6 +18,7 @@ const BL = 'BL-P9-901';
 const AC = 'F99-AC-001';
 const TEST = 'TEST-F99-001';
 const DELTA = 'BD-901';
+let v2ImplementationCommit = null;
 
 const p = (...xs) => path.join(tmp, ...xs);
 const write = (rel, content) => {
@@ -111,6 +112,9 @@ try {
     }
   });
 
+  const install = run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund']);
+  if (install.status !== 0) throw new Error('fixture npm install failed: ' + install.stderr);
+
   git(['init', '-q']);
   git(['config', 'user.name', 'Cursor Build Machine Demo']);
   git(['config', 'user.email', 'fake-sprint@nff.invalid']);
@@ -136,7 +140,7 @@ try {
     writeJson(`delivery/sprints/${SP}/manifest.json`, {
       schema_version: 1, sprint_id: SP, status: 'PLANNED', build_spec_id: BS1,
       goal: 'Exercise the generic Cursor Build Machine delivery lifecycle without touching product truth.',
-      scope: ['F99 fake fixture'], non_scope: ['real product'], tasks_file: 'tasks.json',
+      scope: ['F99 fake fixture'], non_scope: ['real product'], tasks_file: 'tasks.json', backlog_item_ids: [BL],
       entry_gate: { build_spec_locked: true, baseline_gate_passed: true, acceptance_mapped: true, user_approved: false, approval_ref: null }
     });
     writeJson(`delivery/sprints/${SP}/tasks.json`, {
@@ -145,8 +149,8 @@ try {
         task_id: TASK, backlog_item_ids: [BL], title: 'Implement fake F99 behavior', status: 'PLANNED', build_spec_id: BS1,
         scope: ['fake return value'], non_scope: ['real product'],
         acceptance_links: [{ acceptance_id: AC, test_id: TEST }],
-        allowed_write_paths: ['src/fake-e2e/', 'tests/unit/fake-e2e.test.mjs'],
-        required_commands: ['node tests/unit/fake-e2e.test.mjs', 'npm run gate'],
+        allowed_write_paths: ['src/fake-e2e/', 'tests/unit/fake-e2e.test.ts'],
+        required_commands: ['npm run gate', 'npm run check:types', 'npm run check:lint', 'npm run test:unit', 'npm run build', 'npm run security:audit'],
         required_skills: ['implementer', 'test-builder', 'reviewer'], parallel_safe: false,
         product_decision_allowed: false, blocked_by: [], completion_evidence: []
       }]
@@ -155,9 +159,9 @@ try {
       schema_version: 1, build_spec_id: BS1, status: 'OPEN',
       items: [{
         backlog_item_id: BL, source: 'BUILD_SPEC', build_spec_id: BS1, function_id: 'F99', title: 'Fake E2E work item',
-        status: 'SPRINTED', priority: 'P0', scope_contracts: ['F99'],
+        status: 'READY', priority: 'P0', scope_contracts: ['F99'],
         acceptance_links: [{ acceptance_id: AC, test_id: TEST, test_family: 'behavior' }],
-        dependencies: [], sprint_id: SP, product_decision_allowed: false
+        dependencies: [], product_decision_allowed: false
       }]
     });
     const h = commitAll('fake: initial freeze and backlog');
@@ -171,10 +175,6 @@ try {
     current.implementation_enabled = true;
     current.reason = 'FAKE E2E fixture: approved Sprint active.';
     writeJson('build-spec/CURRENT.json', current);
-    writeJson('package-lock.json', {
-      name: 'nff-build', version: '0.0.0', lockfileVersion: 3, requires: true,
-      packages: { '': { name: 'nff-build', version: '0.0.0' } }
-    });
     const sm = readJson(`delivery/sprints/${SP}/manifest.json`);
     sm.status = 'ACTIVE';
     sm.entry_gate.user_approved = true;
@@ -183,6 +183,10 @@ try {
     const td = readJson(`delivery/sprints/${SP}/tasks.json`);
     td.tasks[0].status = 'IN_PROGRESS';
     writeJson(`delivery/sprints/${SP}/tasks.json`, td);
+    const activatedQueue = readJson('delivery/backlog/QUEUE.json');
+    activatedQueue.items[0].status = 'SPRINTED';
+    activatedQueue.items[0].sprint_id = SP;
+    writeJson('delivery/backlog/QUEUE.json', activatedQueue);
     writeJson('delivery/CURRENT-SPRINT.json', {
       schema_version: 1, active_sprint: SP, active_build_spec: BS1, active_task: TASK,
       status: 'ACTIVE', automation_mode: 'SAFE_AUTOMATION', reason: 'FAKE E2E active Sprint.'
@@ -194,18 +198,18 @@ try {
   // 3) Product code is now scoped to one Task. Inject a bug; governance passes but the mapped test fails.
   {
     const base = head();
-    write('src/fake-e2e/feature.mjs', `export const fakeValue = () => 'WRONG';\n`);
-    write('tests/unit/fake-e2e.test.mjs', `import assert from 'node:assert/strict';\nimport { fakeValue } from '../../src/fake-e2e/feature.mjs';\nassert.equal(fakeValue(), 'OK');\nconsole.log('fake unit PASS');\n`);
+    write('src/fake-e2e/feature.ts', "export const fakeValue = () => 'WRONG';\n");
+    write('tests/unit/fake-e2e.test.ts', "import { test, expect } from 'vitest';\nimport { fakeValue } from '../../src/fake-e2e/feature';\ntest('" + TEST + " " + AC + "', () => { expect(fakeValue()).toBe('OK'); });\n");
     const h = commitAll('fake: introduce implementation bug');
     expectGatePass('Active Task write-scope gate with buggy code', base, h);
-    const t = run('node', ['tests/unit/fake-e2e.test.mjs']);
-    record('Mapped test catches implementation bug', t.status !== 0, t.status !== 0 ? 'test failed as expected' : 'bug escaped test');
+    const t = run('npm', ['run', 'product:ci'], { env: { BASE_SHA: base, HEAD_SHA: h } });
+    record('Product CI catches mapped implementation bug', t.status !== 0, t.status !== 0 ? 'Product CI failed as expected' : 'bug escaped Product CI');
   }
 
-  // 4) Fix bug, create Finding and Evidence.
+  // 4) Fix bug and record implementation Finding.
   {
     const base = head();
-    write('src/fake-e2e/feature.mjs', `export const fakeValue = () => 'OK';\n`);
+    write('src/fake-e2e/feature.ts', "export const fakeValue = () => 'OK';\n");
     writeJson('delivery/findings/BF-901.json', {
       schema_version: 1, finding_id: 'BF-901', classification: 'IMPLEMENTATION_BUG', status: 'RESOLVED',
       build_spec_id: BS1, sprint_id: SP, task_id: TASK,
@@ -214,15 +218,10 @@ try {
       attempts: [{ attempt_id: 'A1', strategy: 'return-value-fix', result: 'FAILED', evidence: 'command://initial-test' }],
       affected_contracts: ['F99'], affected_acceptance: [AC], contract_affecting: false, delta_id: null
     });
-    writeJson(`delivery/evidence/EV-${SP}-${TASK}-001.json`, {
-      schema_version: 1, evidence_id: `EV-${SP}-${TASK}-001`, kind: 'TEST_RESULT', build_spec_id: BS1,
-      sprint_id: SP, task_id: TASK, acceptance_ids: [AC], test_ids: [TEST], status: 'PASS',
-      locator: 'command://node-tests-unit-fake-e2e-pass-v1', sha256: null, recorded_at: now
-    });
-    const h = commitAll('fake: fix implementation bug and record evidence');
-    expectGatePass('Fast Loop fix + Finding + Evidence', base, h);
-    const t = run('node', ['tests/unit/fake-e2e.test.mjs']);
-    record('Mapped test passes after fix', t.status === 0, t.status === 0 ? 'test passed' : `${t.stdout}\n${t.stderr}`.slice(-1500));
+    const h = commitAll('fake: fix implementation bug');
+    expectGatePass('Fast Loop fix + Finding', base, h);
+    const t = run('npm', ['run', 'product:ci'], { env: { BASE_SHA: base, HEAD_SHA: h } });
+    record('Product CI passes after fix', t.status === 0, t.status === 0 ? 'Product CI passed' : (t.stdout + '\n' + t.stderr).slice(-2000));
   }
 
   // 5) Slow Loop: contract-affecting Finding blocks Task and creates Design Delta.
@@ -244,7 +243,7 @@ try {
     });
     const td = readJson(`delivery/sprints/${SP}/tasks.json`);
     td.tasks[0].status = 'BLOCKED';
-    td.tasks[0].blocked_by = ['BF-902'];
+    td.tasks[0].blocked_by = [];
     writeJson(`delivery/sprints/${SP}/tasks.json`, td);
     const sm = readJson(`delivery/sprints/${SP}/manifest.json`);
     sm.status = 'BLOCKED';
@@ -320,39 +319,75 @@ try {
   // 8) Implement v2 contract under the replacement baseline.
   {
     const base = head();
-    write('src/fake-e2e/feature.mjs', `export const fakeValue = () => 'OK-V2';\n`);
-    write('tests/unit/fake-e2e.test.mjs', `import assert from 'node:assert/strict';\nimport { fakeValue } from '../../src/fake-e2e/feature.mjs';\nassert.equal(fakeValue(), 'OK-V2');\nconsole.log('fake unit v2 PASS');\n`);
-    writeJson(`delivery/evidence/EV-${SP}-${TASK}-002.json`, {
-      schema_version: 1, evidence_id: `EV-${SP}-${TASK}-002`, kind: 'TEST_RESULT', build_spec_id: BS2,
-      sprint_id: SP, task_id: TASK, acceptance_ids: [AC], test_ids: [TEST], status: 'PASS',
-      locator: 'command://node-tests-unit-fake-e2e-pass-v2', sha256: null, recorded_at: now
-    });
+    write('src/fake-e2e/feature.ts', "export const fakeValue = () => 'OK-V2';\n");
+    write('tests/unit/fake-e2e.test.ts', "import { test, expect } from 'vitest';\nimport { fakeValue } from '../../src/fake-e2e/feature';\ntest('" + TEST + " " + AC + "', () => { expect(fakeValue()).toBe('OK-V2'); });\n");
     const h = commitAll('fake: implement replacement baseline');
+    v2ImplementationCommit = h;
     expectGatePass('Replacement-baseline implementation scope', base, h);
-    const t = run('node', ['tests/unit/fake-e2e.test.mjs']);
-    record('Replacement-baseline mapped test', t.status === 0, t.status === 0 ? 'test passed' : `${t.stdout}\n${t.stderr}`.slice(-1500));
+    const t = run('npm', ['run', 'product:ci'], { env: { BASE_SHA: base, HEAD_SHA: h } });
+    record('Replacement-baseline Product CI', t.status === 0, t.status === 0 ? 'Product CI passed' : (t.stdout + '\n' + t.stderr).slice(-2000));
+    writeJson(`delivery/evidence/EV-${SP}-${TASK}-002.json`, {
+      schema_version: 2, evidence_id: `EV-${SP}-${TASK}-002`, kind: 'TEST_RESULT', build_spec_id: BS2,
+      sprint_id: SP, task_id: TASK, acceptance_ids: [AC], test_ids: [TEST], status: 'PASS',
+      command: null, review_checks: null, blocking_findings: [],
+      locator: 'github-actions://fake-sprint/test-unit-v2', sha256: null, source_commit: v2ImplementationCommit, recorded_at: now
+    });
+    const evidenceCommit = commitAll('fake: record v2 test evidence');
+    expectGatePass('Replacement-baseline Test Evidence', h, evidenceCommit);
   }
 
-  // 9) Review with completion evidence.
+  // 9) Review with complete command + Engineering Quality Evidence.
   {
     const base = head();
-    writeJson(`delivery/evidence/EV-${SP}-${TASK}-003.json`, {
-      schema_version: 1, evidence_id: `EV-${SP}-${TASK}-003`, kind: 'REVIEW', build_spec_id: BS2,
-      sprint_id: SP, task_id: TASK, acceptance_ids: [AC], test_ids: [TEST], status: 'PASS',
-      locator: 'fake-e2e://review-pass', sha256: null, recorded_at: now
+    const commands = [
+      'npm run gate',
+      'npm run check:types',
+      'npm run check:lint',
+      'npm run test:unit',
+      'npm run build',
+      'npm run security:audit'
+    ];
+    const commandEvidenceIds = [];
+    let seq = 10;
+    for (const command of commands) {
+      const [cmd, ...args] = command.split(' ');
+      const rr = run(cmd, args);
+      record('Required command ' + command, rr.status === 0, rr.status === 0 ? 'PASS' : (rr.stdout + '\n' + rr.stderr).slice(-1800));
+      const eid = 'EV-' + SP + '-' + TASK + '-' + String(seq++).padStart(3,'0');
+      commandEvidenceIds.push(eid);
+      writeJson('delivery/evidence/' + eid + '.json', {
+        schema_version: 2, evidence_id: eid, kind: 'COMMAND_RESULT', build_spec_id: BS2,
+        sprint_id: SP, task_id: TASK, acceptance_ids: [], test_ids: [], status: 'PASS',
+        command, review_checks: null, blocking_findings: [],
+        locator: 'command://' + command.replaceAll(' ','-'), sha256: null, source_commit: v2ImplementationCommit, recorded_at: now
+      });
+    }
+    const reviewId = 'EV-' + SP + '-' + TASK + '-003';
+    writeJson('delivery/evidence/' + reviewId + '.json', {
+      schema_version: 2, evidence_id: reviewId, kind: 'REVIEW', build_spec_id: BS2,
+      sprint_id: SP, task_id: TASK, acceptance_ids: [], test_ids: [], status: 'PASS',
+      command: null,
+      review_checks: {
+        semantic_drift: 'PASS', readability: 'PASS', maintainability: 'PASS',
+        algorithmic_complexity: 'PASS', performance_risk: 'PASS', architecture_boundary: 'PASS',
+        type_safety: 'PASS', error_handling: 'PASS', duplication: 'PASS',
+        security: 'PASS', test_quality: 'PASS'
+      },
+      blocking_findings: [], locator: 'fake-e2e://engineering-review-pass', sha256: null,
+      source_commit: v2ImplementationCommit, recorded_at: now
     });
-    const td = readJson(`delivery/sprints/${SP}/tasks.json`);
+    const td = readJson('delivery/sprints/' + SP + '/tasks.json');
     td.tasks[0].status = 'REVIEW';
-    td.tasks[0].completion_evidence = [`EV-${SP}-${TASK}-002`, `EV-${SP}-${TASK}-003`];
-    writeJson(`delivery/sprints/${SP}/tasks.json`, td);
-    const sm = readJson(`delivery/sprints/${SP}/manifest.json`);
+    td.tasks[0].completion_evidence = ['EV-' + SP + '-' + TASK + '-002', ...commandEvidenceIds, reviewId];
+    writeJson('delivery/sprints/' + SP + '/tasks.json', td);
+    const sm = readJson('delivery/sprints/' + SP + '/manifest.json');
     sm.status = 'REVIEW';
-    writeJson(`delivery/sprints/${SP}/manifest.json`, sm);
+    writeJson('delivery/sprints/' + SP + '/manifest.json', sm);
     const cs = readJson('delivery/CURRENT-SPRINT.json');
     cs.status = 'REVIEW';
     writeJson('delivery/CURRENT-SPRINT.json', cs);
-    const h = commitAll('fake: review sprint task');
-    expectGatePass('Review + Completion Evidence', base, h);
+    const h = commitAll('fake: review sprint task with complete evidence');
+    expectGatePass('Review + Complete Engineering Evidence', base, h);
   }
 
   // 10) Close Sprint, close Delta, reset runtime state to HOLD.
