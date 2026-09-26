@@ -53,6 +53,8 @@ Cursor = Execution Agent
 - Once Sprint is ACTIVE/REVIEW, Sprint manifest/task definitions are execution-immutable to Cursor. Any needed re-plan goes through Finding → BLOCK → Planning Agent / Human governance.
 - `task-planner` is not an execution permission and must never appear in an implementation Task `required_skills`.
 
+Canonical Human / ChatGPT / Cursor execution handoff protocol: [`delivery/EXECUTION-HANDOFF-PROTOCOL.md`](EXECUTION-HANDOFF-PROTOCOL.md). Keep execution-collaboration rules there instead of duplicating them in this Operating Model.
+
 ## 3. Backlog Rule
 
 Backlog 是 Build Spec 的 projection，不是新的需求層。

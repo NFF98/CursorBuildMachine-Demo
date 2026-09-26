@@ -24,6 +24,8 @@
 - Sprint ACTIVE/REVIEW 後，Cursor 不得新增 Task、重切 Task、改 AC/Test mapping、擴 `allowed_write_paths`、改 `required_commands` 或修改 Sprint plan/control files。
 - 若 Active Task 的規劃不足、scope 不夠或 write path 不足：停止受影響工作，建立 Finding，回 Planning Agent；不得自行擴張 Task。
 
+Canonical execution collaboration / handoff rule: [`delivery/EXECUTION-HANDOFF-PROTOCOL.md`](delivery/EXECUTION-HANDOFF-PROTOCOL.md). This file is the single Current Truth for Human / ChatGPT / Cursor handoff, manual actions, secrets, review outcomes, and execution escalation.
+
 ## Mandatory Read Order
 
 ```text
