@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "purpose": "Prevent technically-passing but low-quality implementation from being VERIFIED.",
+  "static_policy": {
+    "forbid_test_modifiers": [
+      ".skip(",
+      ".todo(",
+      ".only("
+    ],
+    "forbid_obvious_fake_assertions": [
+      "expect(true).toBe(true)",
+      "expect(1).toBe(1)",
+      "assert(true)"
+    ],
+    "forbid_typescript_escape_hatches": [
+      "@ts-nocheck",
+      "@ts-ignore",
+      "eslint-disable"
+    ]
+  },
+  "eslint_thresholds": {
+    "cyclomatic_complexity_max": 15,
+    "max_nested_block_depth": 4,
+    "max_parameters": 5,
+    "max_lines_per_function": 120
+  },
+  "required_review_checks": [
+    "semantic_drift",
+    "readability",
+    "maintainability",
+    "algorithmic_complexity",
+    "performance_risk",
+    "architecture_boundary",
+    "type_safety",
+    "error_handling",
+    "duplication",
+    "security",
+    "test_quality"
+  ],
+  "reviewer_rule": "All required review checks must be PASS and blocking_findings must be empty before a Task can be VERIFIED/CLOSED.",
+  "performance_rule": "Reviewer must judge code in execution context (build-time/request-time/hot-path/UI-interaction). Avoid avoidable repeated scans, nested loops, repeated parse/serialize/hash, unbounded loops/recursion, and unnecessary large-object cloning. Quantitative benchmark is required only when a locked contract or Task explicitly defines a budget."
+}
