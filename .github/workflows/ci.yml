@@ -28,4 +28,7 @@ jobs:
         if: ${{ hashFiles('package-lock.json') != '' }}
         run: npm ci
       - name: Product CI
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
         run: npm run product:ci
