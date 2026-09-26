@@ -15,6 +15,15 @@
 - Cursor 不得自行建立、批准或 promote Production Release。
 - Production deployment 只能由 approved Release workflow 執行。
 
+## Role Boundary
+
+- HUMAN = Product / Governance authority：決定 Product truth、Sprint Activation、Design Delta、Sprint Close、Release Approval。
+- ChatGPT = sole Planning Agent：在 Sprint HOLD/PLANNED 階段使用 `task-planner`，把 Locked Build Spec + Backlog 投影成 Sprint Plan / Tasks，並執行 governance / readiness audit。
+- Cursor = Execution Agent：只消費已批准的 active Task，執行 implementation / test / debug / evidence / review；不得自行重做 Sprint Planning。
+- `task-planner` 不得出現在 implementation Task 的 `required_skills`。
+- Sprint ACTIVE/REVIEW 後，Cursor 不得新增 Task、重切 Task、改 AC/Test mapping、擴 `allowed_write_paths`、改 `required_commands` 或修改 Sprint plan/control files。
+- 若 Active Task 的規劃不足、scope 不夠或 write path 不足：停止受影響工作，建立 Finding，回 Planning Agent；不得自行擴張 Task。
+
 ## Mandatory Read Order
 
 ```text
@@ -36,6 +45,17 @@ Skill = method，不是 permission。
 - 使用 Skill 仍受 `allowed_write_paths`、Build Spec、Sprint scope、Harness 約束。
 - Skill 不得授權 Product decision。
 - 需要未註冊 Skill / 未定產品行為時停止並升 governance。
+
+
+## Done Means Product + Engineering Quality
+
+- Test green 不是 Done；Task 必須同時通過 Product correctness、Engineering quality、Performance/complexity review 與 Evidence traceability。
+- Active Task 以 fail-closed write scope 執行：未明列在 `allowed_write_paths`，也不是 Finding/Evidence side effect 的檔案，一律不得修改。
+- 不得用 `.skip/.todo/.only`、obvious fake assertion、`@ts-ignore/@ts-nocheck`、blanket `eslint-disable` 製造假綠燈。
+- 不得把可避免的 repeated full scan / nested-loop blow-up / repeated parse-serialize-hash / unbounded loop-recursion / unnecessary large-object clone 當成「先過 AC 再說」。
+- Reviewer 必須對 readability、maintainability、algorithmic complexity、performance risk、architecture boundary、type safety、error handling、duplication、security、test quality、semantic drift 全部 PASS。
+- Task blocked_by 未 VERIFIED/CLOSED 前，不得啟動 dependent Task。
+- Task VERIFIED/CLOSED 前，mapped AC/Test、required commands、Reviewer 都必須有 PASS Evidence。
 
 ## Fast Loop
 
