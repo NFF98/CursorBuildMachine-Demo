@@ -10,6 +10,24 @@ const current=readJson('build-spec/CURRENT.json');
 const policy=readJson('harness/policy/repo-policy.json');
 const baseRoot=path.join(root,'build-spec/baselines');
 const dirs=fs.readdirSync(baseRoot,{withFileTypes:true}).filter(d=>d.isDirectory() && /^BS-P\d+-\d{3}$/.test(d.name)).map(d=>d.name).sort();
+const validateAcceptanceEntries=(id,m,reg)=>{
+  assert(Array.isArray(reg.entries),id+' acceptance registry entries must be array');
+  if(!Array.isArray(reg.entries)) return;
+  assert(m.acceptance_count===reg.entries.length,id+' acceptance_count mismatch');
+  const aids=new Set(), tids=new Set();
+  for(const e of reg.entries){
+    assert(typeof e.acceptance_id==='string' && e.acceptance_id.length>0,id+' acceptance entry missing acceptance_id');
+    if(aids.has(e.acceptance_id)) errors.push(id+' duplicate acceptance_id: '+e.acceptance_id);
+    aids.add(e.acceptance_id);
+    if(e.contract_status==='READY_FOR_IMPLEMENTATION'){
+      assert(typeof e.test_id==='string' && e.test_id.length>0,id+' '+e.acceptance_id+' READY_FOR_IMPLEMENTATION missing test_id');
+      if(e.test_id){
+        if(tids.has(e.test_id)) errors.push(id+' duplicate active test_id: '+e.test_id);
+        tids.add(e.test_id);
+      }
+    }
+  }
+};
 
 for(const id of dirs){
   const dir=path.join(baseRoot,id), manifestPath=path.join(dir,'manifest.json');
@@ -63,19 +81,7 @@ for(const id of dirs){
   assert(ar && fs.existsSync(ar),id+' acceptance registry file missing');
   if(ar && fs.existsSync(ar)){
     const reg=JSON.parse(fs.readFileSync(ar,'utf8'));
-    assert(Array.isArray(reg.entries),id+' acceptance registry entries must be array');
-    if(Array.isArray(reg.entries)){
-      assert(m.acceptance_count===reg.entries.length,id+' acceptance_count mismatch');
-      const aids=new Set(), tids=new Set();
-      for(const e of reg.entries){
-        assert(typeof e.acceptance_id==='string' && e.acceptance_id.length>0,id+' acceptance entry missing acceptance_id');
-        if(aids.has(e.acceptance_id)) errors.push(id+' duplicate acceptance_id: '+e.acceptance_id); aids.add(e.acceptance_id);
-        if(e.contract_status==='READY_FOR_IMPLEMENTATION'){
-          assert(typeof e.test_id==='string' && e.test_id.length>0,id+' '+e.acceptance_id+' READY_FOR_IMPLEMENTATION missing test_id');
-          if(e.test_id){ if(tids.has(e.test_id)) errors.push(id+' duplicate active test_id: '+e.test_id); tids.add(e.test_id); }
-        }
-      }
-    }
+    validateAcceptanceEntries(id,m,reg);
   }
 }
 
